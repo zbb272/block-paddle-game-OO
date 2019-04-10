@@ -8,16 +8,12 @@ function runner(){
   let canvas = document.getElementById("canvas");
   let ctx = canvas.getContext("2d");
 
-  let x = canvas.width / 2;
-  let y = canvas.height - 30;
   //Ball info
-  let dx = 2;
-  let dy = -2;
-  let ballRadius = 10;
+  let ball = new Ball(canvas.width / 2, canvas.height - 30, 2, -2, 10, "#0095DD");
   //paddle info
-  let paddleHeight = 10;
-  let paddleWidth  = 75;
-  let paddleX = (canvas.width - paddleWidth) / 2;
+  // let paddleX = (canvas.width - paddle.width) / 2;
+  let paddle = new Paddle(10, 75, "#0095DD");
+
   //user controllers
   let rightPressed = false;
   let leftPressed = false;
@@ -27,19 +23,15 @@ function runner(){
   //brick info
   let brickRowCount = 3;
   let brickColumnCount = 5;
-  let brickWidth = 75;
-  let brickHeight = 20;
-  let brickPadding = 10;
-  let brickOffsetTop = 30;
-  let brickOffsetLeft = 30;
-    //2-dimensial brick array
-    let bricks = [];
-    for(let c=0; c<brickColumnCount; c++) {
-        bricks[c] = [];
-        for(let r=0; r<brickRowCount; r++) {
-            bricks[c][r] = { x: 0, y: 0 , status: 1};
-        }
-    }
+
+  //2-dimensial brick array
+  let bricks = [];
+  for(let c=0; c<brickColumnCount; c++) {
+      bricks[c] = [];
+      for(let r=0; r<brickRowCount; r++) {
+          bricks[c][r] = new Brick(0, 0, 75, 20, 10, 30, 30, 1, "#0095DD");
+      }
+  }
 
   //score variable
   let score = 0;
@@ -47,36 +39,23 @@ function runner(){
 
   draw();
 
-  //object draw
-  function drawBall(){
-    ctx.beginPath();
-    ctx.arc(x, y, ballRadius, 0, Math.PI*2);
-    ctx.fillStyle = "#0095DD";
-    ctx.fill();
-    ctx.closePath();
-  }
-    //paddle draw
-  function drawPaddle(){
-    ctx.beginPath();
-    ctx.rect(paddleX, canvas.height-paddleHeight, paddleWidth, paddleHeight);
-    ctx.fillStyle = "#0095DD";
-    ctx.fill();
-    ctx.closePath();
-  }
+  //remaining functions
+  //
+  // function drawPaddle(){
+  //   ctx.beginPath();
+  //   ctx.rect(paddle.x, canvas.height-paddle.height, paddle.width, paddle.height);
+  //   ctx.fillStyle = "#0095DD";
+  //   ctx.fill();
+  //   ctx.closePath();
+  // }
     //bricks draw
   function drawBricks() {
     for(let c=0; c < brickColumnCount; c++) {
       for(let r=0; r < brickRowCount; r++) {
         if(bricks[c][r].status === 1) {
-          let brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
-          let brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
-          bricks[c][r].x = brickX;
-          bricks[c][r].y = brickY;
-          ctx.beginPath();
-          ctx.rect(brickX, brickY, brickWidth, brickHeight);
-          ctx.fillStyle = "#0095DD";
-          ctx.fill();
-          ctx.closePath();
+          bricks[c][r].updateX(c);
+          bricks[c][r].updateY(r);
+          bricks[c][r].draw(ctx);
         }
       }
     }
@@ -102,14 +81,13 @@ function runner(){
       for(var r=0; r<brickRowCount; r++) {
         var b = bricks[c][r];
         if(b.status === 1){
-          if(x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeight) {
-            dy = -dy;
+          if(ball.x > b.x && ball.x < b.x+bricks[c][r].width && ball.y > b.y && ball.y < b.y+bricks[c][r].height) {
+            ball.dy = -ball.dy;
             b.status = 0;
             score++;
             if(score == brickRowCount*brickColumnCount) {
               alert("YOU WIN, CONGRATULATIONS!");
               document.location.reload();
-
             }
           }
         }
@@ -121,22 +99,22 @@ function runner(){
   function draw(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBricks();
-    drawBall();
-    drawPaddle();
+    ball.draw(ctx);
+    paddle.draw(ctx);
     drawScore();
     drawLives();
     collisionDetection();
 
     //Check that ball is within the canvas
-    if((x + dx) > (canvas.width - ballRadius) || (x + dx) < ballRadius) {
-      dx = -dx;
+    if((ball.x + ball.dx) > (canvas.width - ball.radius) || (ball.x + ball.dx) < ball.radius) {
+      ball.dx = -ball.dx;
     }
-    if(y + dy < ballRadius) {
-      dy = -dy;
+    if(ball.y + ball.dy < ball.radius) {
+      ball.dy = -ball.dy;
     }
-    else if(y + dy > canvas.height-ballRadius) {
-      if(x > paddleX && x < paddleX + paddleWidth) {
-          dy = -dy;
+    else if(ball.y + ball.dy > canvas.height-ball.radius) {
+      if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+          ball.dy = -ball.dy;
       }
       else {
         lives--;
@@ -145,25 +123,25 @@ function runner(){
           document.location.reload();
         }
         else {
-          x = canvas.width/2;
-          y = canvas.height-30;
-          dx = 2;
-          dy = -2;
-          paddleX = (canvas.width-paddleWidth)/2;
+          ball.x = canvas.width / 2;
+          ball.y = canvas.height - 30;
+          ball.dx = 2;
+          ball.dy = -2;
+          paddle.x = (canvas.width - paddle.width) / 2;
         }
       }
     }
 
     //check paddle within canvas, and check for user input
-    if(rightPressed && paddleX < canvas.width - paddleWidth) {
-      paddleX += 7;
+    if(rightPressed && paddle.x < canvas.width - paddle.width) {
+      paddle.x += 7;
     }
-    else if(leftPressed && paddleX > 0) {
-      paddleX -= 7;
+    else if(leftPressed && paddle.x > 0) {
+      paddle.x -= 7;
     }
 
-    x += dx;
-    y += dy;
+    ball.x += ball.dx;
+    ball.y += ball.dy;
 
     requestAnimationFrame(draw);
   }
@@ -190,7 +168,7 @@ function runner(){
   function mouseMoveHandler(event){
     let relativeX = event.clientX - canvas.offsetLeft;
     if(relativeX > 0 && relativeX < canvas.width){
-      paddleX = relativeX - paddleWidth / 2;
+      paddle.x = relativeX - paddle.width / 2;
     }
   }
 }
