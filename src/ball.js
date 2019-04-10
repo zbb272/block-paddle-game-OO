@@ -1,4 +1,5 @@
 class Ball{
+  static canvas = document.getElementById("canvas");
   constructor(x, y, dx, dy, radius, color){
     this.x = x;
     this.y = y;
@@ -14,5 +15,25 @@ class Ball{
     ctx.fillStyle = this.color;
     ctx.fill();
     ctx.closePath();
+  }
+
+  checkXBoundry(){
+    if((this.x + this.dx) > (canvas.width - this.radius) || (this.x + this.dx) < this.radius) {
+      this.dx = -this.dx;
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+
+  checkYBoundry(){
+    if(this.y + this.dy < this.radius) {
+      this.dy = -this.dy;
+      return true;
+    }
+    else{
+      return false;
+    }
   }
 }
